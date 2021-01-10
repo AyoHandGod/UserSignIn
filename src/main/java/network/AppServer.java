@@ -4,8 +4,14 @@ import com.wrapper.spotify.SpotifyApi;
 import com.wrapper.spotify.SpotifyHttpManager;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import com.wrapper.spotify.model_objects.credentials.AuthorizationCodeCredentials;
+import com.wrapper.spotify.model_objects.specification.Paging;
+import com.wrapper.spotify.model_objects.specification.SavedAlbum;
+import com.wrapper.spotify.model_objects.specification.User;
+import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeRefreshRequest;
 import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeRequest;
 import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeUriRequest;
+import com.wrapper.spotify.requests.data.library.GetCurrentUsersSavedAlbumsRequest;
+import com.wrapper.spotify.requests.data.users_profile.GetCurrentUsersProfileRequest;
 import org.apache.hc.core5.http.ParseException;
 
 import javax.servlet.annotation.WebServlet;
@@ -13,7 +19,13 @@ import javax.servlet.http.*;
 import javax.servlet.*;
 import java.io.*;
 import java.net.URI;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.Objects;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Application Server that handles client requests and responds to Spotify.
@@ -22,17 +34,27 @@ import java.util.Date;
 @WebServlet("/home")
 public class AppServer extends HttpServlet {
 
+    private final Logger logger = Logger.getLogger(AppServer.class.getName());
+    private FileHandler fileHandler = new FileHandler();
+    private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+
     private final SpotifyApi spotifyApi = new SpotifyApi.Builder()
             .setClientId("c59275ebbf74401fa69f5936e6c43cca")
             .setClientSecret("35667913882d4a5ca3207923ddc6723c")
             .setRedirectUri(SpotifyHttpManager.makeUri("http://localhost:8080/UserSignIn_war_exploded/home"))
             .build();
 
+    public AppServer() throws IOException {
+    }
+
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         // process the request
+        logger.log(Level.INFO, "Authorization Code Request received at: " + dtf.format(LocalDateTime.now()));
         String strHost = req.getHeader("Host");
         String strContentType = req.getContentType();
         String queryParameter = req.getParameter("code");
+
+        PrintWriter writer = resp.getWriter();
 
         // generate the response
         resp.setContentType("text/html");
@@ -43,9 +65,29 @@ public class AppServer extends HttpServlet {
         // Get the code query parameter and uses it to create Access Token and Refresh token
         AuthorizationCodeCredentials authorizationCodeCredentials = getAccessRefreshTokens(queryParameter);
         assert authorizationCodeCredentials != null;
-        resp.getWriter().write("Expires in: " + authorizationCodeCredentials.getExpiresIn());
+
+        spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
+        spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken());
+        resp.getWriter().write("Expires in: " + authorizationCodeCredentials.getExpiresIn() + "\n");
+        // End access token process
+
+        // test out getting users Data
+        User user = getUserData();
+        writer.write(user.getDisplayName() + "\n");
+
+        // test out getting users Saved Albums
+        for (SavedAlbum savedAlbum: Objects.requireNonNull(getUsersAlbums())) {
+            writer.write(savedAlbum.getAlbum().getName());
+        }
     }
 
+    // TODO: Add a Timer to manager Refreshing Access token
+
+    /**
+     * Generate the Authorization Code Credentials using the Auth Code
+     * @param authCode String value code provided in Spotify request as query parameter
+     * @return AuthorizationCodeCredentials object if code valid, null otherwise.
+     */
     private AuthorizationCodeCredentials getAccessRefreshTokens(String authCode) {
         // We use the Auth Code that we retrieved previously in order to obtain the access and refresh
         // tokens.
@@ -84,6 +126,33 @@ public class AppServer extends HttpServlet {
         // End Auth Code Access Process
     }
 
+    private SavedAlbum[] getUsersAlbums() {
+        logger.log(Level.INFO, "Get Users Saved Albums Request received at: " + dtf.format(LocalDateTime.now()));
+
+        GetCurrentUsersSavedAlbumsRequest getCurrentUsersSavedAlbumsRequest = spotifyApi
+                .getCurrentUsersSavedAlbums().limit(10).offset(0).build();
+
+        try {
+            Paging<SavedAlbum> savedAlbumPaging = getCurrentUsersSavedAlbumsRequest.execute();
+            return savedAlbumPaging.getItems();
+        } catch (IOException | SpotifyWebApiException | ParseException e) {
+            System.out.println("Error: " + e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage() + "at: " + dtf.format(LocalDateTime.now()));
+            return null;
+        }
+    }
+
+    private User getUserData() {
+        GetCurrentUsersProfileRequest getCurrentUsersProfileRequest = spotifyApi.getCurrentUsersProfile().build();
+        try {
+            return getCurrentUsersProfileRequest.execute();
+        } catch (IOException | SpotifyWebApiException | ParseException e) {
+            logger.log(Level.SEVERE, e.getMessage() + " at: " + dtf.format(LocalDateTime.now()));
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public static void main(String[] args) {
         //This process builds the link we need to grant authorization to the app, and returns it in the console.
         // Meanwhile, the servlet that handles the call is currently printing the returned code to the page.
@@ -94,7 +163,8 @@ public class AppServer extends HttpServlet {
                 .setRedirectUri(SpotifyHttpManager.makeUri("http://localhost:8080/UserSignIn_war_exploded/home"))
                 .build();
 
-        AuthorizationCodeUriRequest authCodeUriRequest = spotifyApi.authorizationCodeUri().build();
+        AuthorizationCodeUriRequest authCodeUriRequest = spotifyApi.authorizationCodeUri()
+                .scope("user-library-read").build();
         URI uri = authCodeUriRequest.execute();
         String accessToken = spotifyApi.getAccessToken();
         System.out.println("URI: " + uri.toString());
