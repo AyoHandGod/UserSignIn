@@ -43,6 +43,7 @@ public class CallTester {
                         "0hQDOa-CrcC_1yJSKGnxLLtyqsYQZvLc88cvbIv7DhJj5eLe5w_l2yGx6VI6cAeB5eJUigoBi9S8UI5" +
                         "AuQABRZqtHdHXFMVSMasED_c_M2FeVeP1XwrAR0hLeqHNP2qMYaF").build();
 
+        /**
         try {
             AuthorizationCodeCredentials authorizationCodeCredentials = authorizationCodeRequest.execute();
             spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
@@ -52,6 +53,6 @@ public class CallTester {
         } catch (IOException | SpotifyWebApiException | ParseException e) {
             System.out.println("Error: " + e.getMessage());
         }
-        // End Access and Refresh Token Process
+        // End Access and Refresh Token Process */
     }
 }

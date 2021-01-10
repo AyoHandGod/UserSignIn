@@ -63,7 +63,14 @@ public class AppServer extends HttpServlet {
         // resp.sendRedirect("/otherAddress");
 
         // Get the code query parameter and uses it to create Access Token and Refresh token
-        AuthorizationCodeCredentials authorizationCodeCredentials = getAccessRefreshTokens(queryParameter);
+        AuthorizationCodeCredentials authorizationCodeCredentials = null;
+        try {
+            authorizationCodeCredentials = getAccessRefreshTokens(queryParameter);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        } catch (SpotifyWebApiException e) {
+            e.printStackTrace();
+        }
         assert authorizationCodeCredentials != null;
 
         spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
@@ -72,12 +79,25 @@ public class AppServer extends HttpServlet {
         // End access token process
 
         // test out getting users Data
-        User user = getUserData();
+        User user = null;
+        try {
+            user = getUserData();
+        } catch (SpotifyWebApiException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
         writer.write(user.getDisplayName() + "\n");
 
         // test out getting users Saved Albums
-        for (SavedAlbum savedAlbum: Objects.requireNonNull(getUsersAlbums())) {
-            writer.write(savedAlbum.getAlbum().getName());
+        try {
+            for (SavedAlbum savedAlbum: Objects.requireNonNull(getUsersAlbums())) {
+                writer.write(savedAlbum.getAlbum().getName());
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        } catch (SpotifyWebApiException e) {
+            e.printStackTrace();
         }
     }
 
@@ -88,24 +108,20 @@ public class AppServer extends HttpServlet {
      * @param authCode String value code provided in Spotify request as query parameter
      * @return AuthorizationCodeCredentials object if code valid, null otherwise.
      */
-    private AuthorizationCodeCredentials getAccessRefreshTokens(String authCode) {
+    private AuthorizationCodeCredentials getAccessRefreshTokens(String authCode)
+            throws ParseException, SpotifyWebApiException, IOException {
         // We use the Auth Code that we retrieved previously in order to obtain the access and refresh
         // tokens.
         // Start Access and Refresh Token Process
         AuthorizationCodeRequest authorizationCodeRequest = spotifyApi
                 .authorizationCode(authCode).build();
 
-        try {
-            AuthorizationCodeCredentials authorizationCodeCredentials = authorizationCodeRequest.execute();
-            spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
-            spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken());
+        AuthorizationCodeCredentials authorizationCodeCredentials = authorizationCodeRequest.execute();
+        spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
+        spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken());
 
-            return authorizationCodeCredentials;
+        return authorizationCodeCredentials;
 
-        } catch (IOException | SpotifyWebApiException | ParseException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-        return null;
         // End Access and Refresh Token Process
     }
 
@@ -126,31 +142,19 @@ public class AppServer extends HttpServlet {
         // End Auth Code Access Process
     }
 
-    private SavedAlbum[] getUsersAlbums() {
+    private SavedAlbum[] getUsersAlbums() throws ParseException, SpotifyWebApiException, IOException {
         logger.log(Level.INFO, "Get Users Saved Albums Request received at: " + dtf.format(LocalDateTime.now()));
 
         GetCurrentUsersSavedAlbumsRequest getCurrentUsersSavedAlbumsRequest = spotifyApi
                 .getCurrentUsersSavedAlbums().limit(10).offset(0).build();
 
-        try {
-            Paging<SavedAlbum> savedAlbumPaging = getCurrentUsersSavedAlbumsRequest.execute();
-            return savedAlbumPaging.getItems();
-        } catch (IOException | SpotifyWebApiException | ParseException e) {
-            System.out.println("Error: " + e.getMessage());
-            logger.log(Level.SEVERE, e.getMessage() + "at: " + dtf.format(LocalDateTime.now()));
-            return null;
-        }
+        Paging<SavedAlbum> savedAlbumPaging = getCurrentUsersSavedAlbumsRequest.execute();
+        return savedAlbumPaging.getItems();
     }
 
-    private User getUserData() {
+    private User getUserData() throws SpotifyWebApiException, IOException, ParseException {
         GetCurrentUsersProfileRequest getCurrentUsersProfileRequest = spotifyApi.getCurrentUsersProfile().build();
-        try {
-            return getCurrentUsersProfileRequest.execute();
-        } catch (IOException | SpotifyWebApiException | ParseException e) {
-            logger.log(Level.SEVERE, e.getMessage() + " at: " + dtf.format(LocalDateTime.now()));
-            e.printStackTrace();
-            return null;
-        }
+        return getCurrentUsersProfileRequest.execute();
     }
 
     public static void main(String[] args) {
