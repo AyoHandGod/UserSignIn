@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+<!DOCTYPE web-app
+        PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+        "http://java.sun.com/dtd/web-app_2_3.dtd">
+
+<web-app>
+
+    <servlet>
+        <servlet-name>partyServlet</servlet-name>
+        <servlet-class>network.PartyServlet</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>AppServlet</servlet-name>
+        <servlet-class>network.AppServer</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>partyServlet</servlet-name>
+        <url-pattern>*.html</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>AppServlet</servlet-name>
+        <url-pattern>/app/</url-pattern>
+    </servlet-mapping>
+
+    <error-page>
+        <error-code>404</error-code>
+        <location>/error.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>500</error-code>
+        <location>/error.jsp</location>
+    </error-page>
+</web-app>
