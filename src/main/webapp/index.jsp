@@ -36,8 +36,7 @@
     <br><br>
     <input type="submit" value="login" class="nes-btn" />
 </form> -->
-<a href="https://accounts.spotify.com:443/authorize?client_id=c59275ebbf74401fa69f5936e6c43cca&response_type=code
-&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2FUserSignIn_war_exploded%2Fhome&scope=user-library-read+user-read-private"
+<a href="https://accounts.spotify.com:443/authorize?client_id=c59275ebbf74401fa69f5936e6c43cca&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2FUserSignIn_war%2Fhome&scope=user-library-read"
    class="nes-btn is-primary">Sign in</a>
 </body>
 </html>

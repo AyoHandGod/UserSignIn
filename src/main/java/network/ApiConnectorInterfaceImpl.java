@@ -61,13 +61,12 @@ public class ApiConnectorInterfaceImpl implements ApiConnectorInterface {
         AuthorizationCodeCredentials authorizationCodeCredentials = null;
         try {
             authorizationCodeCredentials = getAccessRefreshTokens(code);
+            this.spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
+            this.spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken());
         } catch (ParseException | SpotifyWebApiException | IOException e) {
             logger.log(Level.SEVERE, e.getMessage());
         }
         assert authorizationCodeCredentials != null;
-
-        this.spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
-        this.spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken());
         // End access token process
 
     }

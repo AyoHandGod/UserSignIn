@@ -5,7 +5,6 @@
         "http://java.sun.com/dtd/web-app_2_3.dtd">
 
 <web-app>
-
     <servlet>
         <servlet-name>partyServlet</servlet-name>
         <servlet-class>network.PartyServlet</servlet-class>
@@ -23,7 +22,7 @@
 
     <servlet-mapping>
         <servlet-name>AppServlet</servlet-name>
-        <url-pattern>/app/</url-pattern>
+        <url-pattern>/home/</url-pattern>
     </servlet-mapping>
 
     <error-page>
@@ -35,4 +34,5 @@
         <error-code>500</error-code>
         <location>/error.jsp</location>
     </error-page>
+    <absolute-ordering />
 </web-app>

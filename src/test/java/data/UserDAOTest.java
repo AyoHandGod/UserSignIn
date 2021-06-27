@@ -15,7 +15,6 @@ public class UserDAOTest extends TestCase {
     }
 
     public void testCheckLogin() {
-        assertEquals()
     }
 
     public void testAddUser() {

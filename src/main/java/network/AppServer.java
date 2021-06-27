@@ -2,15 +2,14 @@ package network;
 
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import com.wrapper.spotify.model_objects.miscellaneous.PlaylistTracksInformation;
-import com.wrapper.spotify.model_objects.specification.PlaylistSimplified;
-import com.wrapper.spotify.model_objects.specification.SavedAlbum;
-import com.wrapper.spotify.model_objects.specification.User;
+import com.wrapper.spotify.model_objects.specification.*;
 import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeUriRequest;
-import org.apache.hc.core5.http.ParseException;
-
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
-import javax.servlet.*;
+import org.apache.hc.core5.http.ParseException;
+
+
 import java.io.*;
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -18,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 /**
  * Application Servlet that handles client requests and responds to Spotify.
@@ -58,6 +58,9 @@ public class AppServer extends HttpServlet {
         User user = null;
         try {
             user = apiConnectorInterface.getUserData();
+            writer.write("<p> " + user.getDisplayName() + "</p>\n");
+            writer.write("<ul>");
+            req.getSession().setAttribute("userName", user.getDisplayName());
         } catch (SpotifyWebApiException e) {
             e.printStackTrace();
         } catch (ParseException e) {
@@ -65,15 +68,26 @@ public class AppServer extends HttpServlet {
         }
 
         assert user != null;
-        writer.write("<p> " + user.getDisplayName() + "</p>\n");
-        writer.write("<ul>");
-        req.getSession().setAttribute("userName", user.getDisplayName());
 
         // test out getting users Saved Albums and playlists from user
         try(PrintWriter filewriter = new PrintWriter(
                 new BufferedWriter(new FileWriter(System.getProperty("user.dir") + "TextFile.txt")))) {
+
             for (SavedAlbum savedAlbum: apiConnectorInterface.getUsersSavedAlbums(10, 0)) {
                 writer.write("<li>" + savedAlbum.getAlbum().getName() + "</li>");
+                Stream<TrackSimplified> tracks = Stream.of(savedAlbum.getAlbum().getTracks().getItems());
+                tracks.forEach(t -> {
+                    try {
+                        Track song = apiConnectorInterface.getSpotifyApi().getTrack(t.getId()).build().execute();
+                        writer.write(song.getName());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (SpotifyWebApiException e) {
+                        e.printStackTrace();
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                });
             }
             writer.write("</ul>");
             writer.write("<p>" + session + "</p>");
@@ -113,7 +127,7 @@ public class AppServer extends HttpServlet {
         ApiConnectorInterface apiConnectorInterface = ApiConnectorInterfaceImpl.create();
 
         AuthorizationCodeUriRequest authCodeUriRequest = apiConnectorInterface.getSpotifyApi().authorizationCodeUri()
-                .scope("user-library-read user-read-private").build();
+                .scope("user-library-read").build();
         URI uri = authCodeUriRequest.execute();
         System.out.println("URI: " + uri.toString());
         // End Auth Code Access Process

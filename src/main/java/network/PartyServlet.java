@@ -1,8 +1,11 @@
 package network;
 
-import javax.servlet.ServletException;
+
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.*;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSessionBindingEvent;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -21,7 +24,7 @@ public class PartyServlet extends HttpServlet {
     HttpSessionBindingEvent sessionBindingEvent;
 
     @Override
-    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         sessionBindingEvent =
                 new HttpSessionBindingEvent(req.getSession(), req.getSession().getId());
         PrintWriter writer = resp.getWriter();

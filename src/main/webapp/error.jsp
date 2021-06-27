@@ -12,7 +12,7 @@
     <title>Error Page</title>
 </head>
 <body>
-    <p>Uh oh! Things are working on this page</p>
+    <p>Uh oh! Things aren't working on this page at the moment</p>
     <p>We're getting a <%= response.getStatus() %> error </p>
     <c:if test="${headerValues.get('status') == 500}">
         <p>Ran into a server issue on our end</p>
